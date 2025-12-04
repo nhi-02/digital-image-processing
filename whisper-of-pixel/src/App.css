@@ -29,28 +29,42 @@ body {
   padding: 12px 16px;
 }
 
-.logo-box {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #8dd8ff, #e0ffe7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .logo-img {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  background: white;
-  border: 2px solid #24c1ff;
+  width: 70px;
+  height: 70px;
+  border-radius: 10px;
+  object-fit: contain;
 }
 
 .logo-text {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 600;
-  color: #15a4d8;
+  font-family: "Pacifico", cursive;
+    background: linear-gradient(
+    120deg,
+    #0040ff 0%,
+    #3388ff 20%,
+    #33ddff 40%,
+    #00ffff 50%,
+    #33ddff 60%,
+    #3388ff 80%,
+    #0040ff 100%
+  );
+  background-size: 200% auto;
+  animation: shine 4s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  display: inline-block;
+  padding-right: 4px;
+}
+@keyframes shine {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: -200% 50%;
+  }
 }
 
 .app-main {
@@ -84,8 +98,7 @@ body {
   position: relative;
 }
 
-.drop-left,
-.drop-right {
+.drop-left {
   flex: 1;
   display: flex;
   align-items: center;
@@ -94,6 +107,42 @@ body {
   overflow: hidden;
 }
 
+.drop-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  overflow: hidden;
+  position: relative; /* để overlay bám theo */
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* Vòng xoay loading */
+.spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 4px solid #cbeffd;
+  border-top-color: #1f99ff;
+  animation: spin 0.8s linear infinite;
+}
+
+/* animation quay */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .vertical-divider {
   width: 1px;
   background: repeating-linear-gradient(
@@ -397,4 +446,97 @@ body {
   .logo-text {
     font-size: 22px;
   }
+}
+button {
+  font-family: "Fredoka", sans-serif !important;
+}
+/* ===========================================
+   🔵 TOÀN BỘ BUTTON MẶC ĐỊNH: GRADIENT XANH → CYAN
+   =========================================== */
+button,
+.parent-button,
+.child-button,
+.save-button,
+.run-button,
+.carousel-controls button {
+  font-family: "Fredoka", sans-serif !important;
+
+  background: linear-gradient(135deg, #0090ff, #00eaff);
+  color: white;
+
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+
+  transition: 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 145, 255, 0.25);
+}
+
+/* Hover → sáng hơn, mềm hơn */
+button:hover:not(:disabled),
+.parent-button:hover:not(.active),
+.child-button:hover:not(.active),
+.save-button:hover:not(:disabled),
+.run-button:hover:not(:disabled),
+.carousel-controls button:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 3px 10px rgba(0, 200, 255, 0.35);
+}
+
+
+/* ===========================================
+   🔷 ACTIVE BUTTON (NÚT ĐANG CHỌN)
+   — Màu đậm hơn, gradient sâu hơn, viền highlight
+   =========================================== */
+.parent-button.active,
+.child-button.active {
+  background: linear-gradient(135deg, #0060d4, #00aacc) !important;
+  color: white !important;
+
+  box-shadow: 0 3px 10px rgba(0, 120, 255, 0.45) !important;
+  filter: brightness(1.05) !important;
+}
+
+
+/* ===========================================
+   📌 SAVE BUTTON (có icon) – dùng gradient riêng đẹp hơn
+   =========================================== */
+.save-button {
+  padding: 6px 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  background: linear-gradient(135deg, #0090ff, #00eaff);
+  box-shadow: 0 3px 6px rgba(0, 198, 255, 0.35);
+}
+
+.save-button:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.save-button:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* nhỏ icon save */
+.save-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Ảnh nền toàn trang */
+.app-background {
+  position: fixed;
+  inset: 0;
+  background-image: url("./assets/bg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  opacity: 0.5;              /* mờ mềm, không gây phân tâm */
+  filter: blur(2px);          /* nhẹ thôi để đẹp */
+  z-index: -1;                /* nằm sau toàn bộ app */
 }

@@ -23,7 +23,17 @@ app.add_middleware(
 
 store = ImageStore()
 
-
+def get_image_or_404(image_id: str) -> np.ndarray:
+    """
+    Lấy ảnh từ store; nếu không có thì trả 404 thay vì văng KeyError.
+    """
+    try:
+        return store.get(image_id)
+    except KeyError:
+        raise HTTPException(
+            status_code=404,
+            detail="Image not found or expired. Please upload again.",
+        )
 # ---------------------------
 # Helper
 # ---------------------------
@@ -64,15 +74,23 @@ def _response_from_images(labeled_imgs: List[tuple]):
 
 @app.post("/upload")
 async def upload_image(file: UploadFile = File(...)):
-    _validate_image_file(file)
-    img = _uploadfile_to_numpy(file)
+    contents = await file.read()
+    try:
+        pil_img = Image.open(BytesIO(contents))
+    except Exception:
+        raise HTTPException(status_code=400, detail="File is not a valid image.")
+
+    pil_rgb = pil_img.convert("RGB")
+    img = np.array(pil_rgb)
+
     image_id = store.add(img)
-    h, w = img.shape[:2]
+
+    # dùng sẵn store.to_data_url để tạo preview PNG
+    preview_url = store.to_data_url(img, fmt="PNG")
+
     return {
         "image_id": image_id,
-        "filename": file.filename,
-        "width": w,
-        "height": h,
+        "preview_url": preview_url,
     }
 
 
@@ -190,7 +208,7 @@ async def hist_show(image_id: str):
 async def hist_equalization(image_id: str):
     img = store.get(image_id)
     eq = ops.histogram_equalization(img)
-    return _response_from_images([("Equalized (Y-channel)", eq)])
+    return _response_from_images([("Equalized", eq)])
 
 
 @app.get("/histogram/matching")
@@ -198,7 +216,7 @@ async def hist_matching(image_id: str, target_id: str):
     src = store.get(image_id)
     ref = store.get(target_id)
     matched = ops.histogram_matching(src, ref)
-    return _response_from_images([("Histogram matched (Y-channel)", matched)])
+    return _response_from_images([("Histogram matched", matched)])
 
 
 # ---------------------------
@@ -237,25 +255,32 @@ async def noise_impulse(image_id: str, amount: float = 0.01):
 # 5. SPATIAL FILTERS
 # ---------------------------
 
-@app.post("/spatial/correlation")
-async def spatial_correlation(image_id: str, kernel: UploadFile = File(...)):
-    img = store.get(image_id)
-    text = (await kernel.read()).decode("utf-8")
-    rows = [[float(num) for num in line.split()] for line in text.strip().splitlines()]
-    k = np.array(rows, dtype=np.float32)
-    out = ops.correlation(img, k)
-    return _response_from_images([("Correlation (gray)", out)])
+@app.get("/spatial/correlation")
+async def spatial_correlation(
+    image_id: str = Query(...),
+    target_id: str = Query(...),
+):
+    img = get_image_or_404(image_id)
+    tpl = get_image_or_404(target_id)
+    try:
+        outs = ops.template_correlation(img, tpl)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return _response_from_images(outs)
 
 
-@app.post("/spatial/convolution")
-async def spatial_convolution(image_id: str, kernel: UploadFile = File(...)):
-    img = store.get(image_id)
-    text = (await kernel.read()).decode("utf-8")
-    rows = [[float(num) for num in line.split()] for line in text.strip().splitlines()]
-    k = np.array(rows, dtype=np.float32)
-    out = ops.convolution(img, k)
-    return _response_from_images([("Convolution (gray)", out)])
-
+@app.get("/spatial/convolution")
+async def spatial_convolution(
+    image_id: str = Query(...),
+    target_id: str = Query(...),
+):
+    img = get_image_or_404(image_id)
+    tpl = get_image_or_404(target_id)
+    try:
+        outs = ops.template_convolution(img, tpl)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return _response_from_images(outs)
 
 @app.get("/spatial/mean")
 async def spatial_mean(image_id: str, ksize: int = 3):

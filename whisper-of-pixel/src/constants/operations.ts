@@ -89,13 +89,13 @@ export const PARENTS = [
         id: "spatial-corr",
         label: "Correlation",
         path: "/spatial/correlation",
-        params: [{ name: "kernel", label: "Kernel file (.txt)", type: "kernel" }],
+        params: [{name: "templateImage", label: "Template image (mask)", type: "image-upload",},],
       },
       {
         id: "spatial-conv",
         label: "Convolution",
         path: "/spatial/convolution",
-        params: [{ name: "kernel", label: "Kernel file (.txt)", type: "kernel" }],
+        params: [{name: "templateImage", label: "Template image (mask)", type: "image-upload",},],
       },
       {
         id: "spatial-mean",
@@ -193,18 +193,6 @@ export const PARENTS = [
         id: "freq-inverse",
         label: "Lọc nghịch đảo",
         path: "/frequency/inverse",
-      },
-    ],
-  },
-  {
-    id: "pca",
-    label: "PCA",
-    children: [
-      {
-        id: "pca-compress",
-        label: "PCA compress",
-        path: "/pca/compress",
-        params: [{ name: "k", label: "Num components", type: "number", default: 50 }],
       },
     ],
   },

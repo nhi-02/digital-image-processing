@@ -333,22 +333,76 @@ def add_impulse_noise(img: np.ndarray, amount=0.01) -> np.ndarray:
 # 5. SPATIAL FILTERS (per-channel)
 # ---------------------------
 
-def correlation(img: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+def template_correlation(image: np.ndarray, template: np.ndarray):
     """
-    Correlation trên kênh sáng (theo đúng lý thuyết).
+    Correlation dùng template là 1 patch ảnh.
+    - Trả về: 
+      + response map (hiển thị dạng ảnh xám)
+      + ảnh gốc với box tại vị trí match tốt nhất
     """
-    gray = to_gray(img)
-    k = kernel.astype(np.float32)
-    dst = cv2.filter2D(gray, -1, k, borderType=cv2.BORDER_REFLECT)
-    return dst
+    img_gray = to_gray(image)
+    tpl_gray = to_gray(template)
+
+    h, w = tpl_gray.shape[:2]
+    H, W = img_gray.shape[:2]
+    if h > H or w > W:
+        raise ValueError("Template must be smaller than the input image.")
+
+    # cross-correlation chuẩn OpenCV
+    res = cv2.matchTemplate(img_gray, tpl_gray, cv2.TM_CCOEFF_NORMED)
+
+    # scale về [0,255] để hiển thị
+    res_norm = cv2.normalize(res, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    res_vis = cv2.cvtColor(res_norm, cv2.COLOR_GRAY2RGB)
+
+    # lấy vị trí tương quan cao nhất
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+
+    top_left = max_loc
+    bottom_right = (top_left[0] + w, top_left[1] + h)
+
+    match_vis = image.copy()
+    cv2.rectangle(match_vis, top_left, bottom_right, (255, 0, 0), 2)
+
+    return [
+        ("Correlation response", res_vis),
+        (f"Best match (score={max_val:.3f})", match_vis),
+    ]
 
 
-def convolution(img: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+def template_convolution(image: np.ndarray, template: np.ndarray):
     """
-    Convolution = correlation với kernel lật.
+    Convolution dạng template:
+    - về lý thuyết: conv = corr với kernel bị lật.
+    - Ta lật template rồi dùng matchTemplate cho đơn giản.
     """
-    k = np.flipud(np.fliplr(kernel))
-    return correlation(img, k)
+    img_gray = to_gray(image)
+    tpl_gray = to_gray(template)
+
+    h, w = tpl_gray.shape[:2]
+    H, W = img_gray.shape[:2]
+    if h > H or w > W:
+        raise ValueError("Template must be smaller than the input image.")
+
+    # lật template (conv = corr với kernel lật)
+    tpl_flip = cv2.flip(tpl_gray, -1)
+
+    res = cv2.matchTemplate(img_gray, tpl_flip, cv2.TM_CCOEFF_NORMED)
+
+    res_norm = cv2.normalize(res, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    res_vis = cv2.cvtColor(res_norm, cv2.COLOR_GRAY2RGB)
+
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    top_left = max_loc
+    bottom_right = (top_left[0] + w, top_left[1] + h)
+
+    match_vis = image.copy()
+    cv2.rectangle(match_vis, top_left, bottom_right, (0, 255, 0), 2)
+
+    return [
+        ("Convolution response", res_vis),
+        (f"Best match (score={max_val:.3f})", match_vis),
+    ]
 
 
 def mean_filter(img: np.ndarray, ksize: int = 3) -> np.ndarray:

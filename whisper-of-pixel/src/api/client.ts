@@ -16,11 +16,18 @@ async function handleResponse(res: Response): Promise<any> {
 export async function uploadImage(file: File) {
   const formData = new FormData();
   formData.append("file", file);
+
   const res = await fetch(`${API_BASE}/upload`, {
     method: "POST",
     body: formData,
   });
-  return handleResponse(res);
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text);
+  }
+
+  return res.json(); // { image_id }
 }
 
 export async function getJson(

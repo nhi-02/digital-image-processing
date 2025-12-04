@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import JSZip from "jszip";
 import { uploadImage, getJson, postKernel } from "./api/client";
 import { PARENTS } from "./constants/operations";
-
+import logo from "./assets/logo.png";
 interface OutputImage {
   label: string;
   data_url: string;
@@ -64,21 +64,26 @@ function App() {
     resetAllProcessing();
     setOriginalFile(file);
     setFilename(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setOriginalUrl(reader.result);
-    };
-    reader.readAsDataURL(file);
 
     try {
       const data = await uploadImage(file);
       setImageId(data.image_id);
-    } catch (err) {
+      // dùng preview từ backend (luôn là PNG)
+      if (data.preview_url) {
+        setOriginalUrl(data.preview_url);
+      } else {
+        // fallback (phòng khi backend cũ chưa trả preview)
+        const reader = new FileReader();
+        reader.onload = () => {
+          setOriginalUrl(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err: any) {
       console.error(err);
       setError("Upload failed: " + err.message);
     }
   };
-
   const resetAllProcessing = () => {
     setOutputs([]);
     setCurrentOutputIndex(0);
@@ -226,7 +231,9 @@ function App() {
 
   const handleSave = async () => {
     if (!hasProcessed) return;
+
     try {
+      // 1) Giữ nguyên phần nén Huffman
       if (compressionResult) {
         const { compressed_data_base64 } = compressionResult;
         const bytes = Uint8Array.from(
@@ -245,28 +252,29 @@ function App() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-      } else if (outputs.length > 0) {
-        // Zip tất cả ảnh output
-        const zip = new JSZip();
-        for (let i = 0; i < outputs.length; i++) {
-          const o = outputs[i];
-          const base64 = o.data_url.split(",")[1];
-          const labelSafe = o.label.replace(/\s+/g, "_");
-          zip.file(`${i + 1}_${labelSafe}.png`, base64, {
-            base64: true,
-          });
-        }
-        const blob = await zip.generateAsync({ type: "blob" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = (filename || "image") + "_outputs.zip";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        return;
       }
-    } catch (err) {
+
+      // 2) Các trường hợp còn lại: lưu ảnh output hiện tại (PNG)
+      if (!currentOutput) {
+        setError("No output to save.");
+        return;
+      }
+
+      // currentOutput.data_url đã là data:image/png;base64,...
+      const link = document.createElement("a");
+      link.href = currentOutput.data_url;
+
+      // đặt tên file: <tên gốc>_<label>.png
+      const labelSafe = currentOutput.label
+        ? currentOutput.label.replace(/\s+/g, "_")
+        : "output";
+
+      link.download = `${filename || "image"}_${labelSafe}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: any) {
       console.error(err);
       setError("Save failed: " + err.message);
     }
@@ -340,10 +348,10 @@ function App() {
 
   return (
     <div className="app-root">
+    {/* Background layer */}
+    <div className="app-background"></div>
       <header className="app-header">
-        <div className="logo-box">
-          <div className="logo-img" />
-        </div>
+        <img src={logo} className="logo-img" alt="Whisper of Pixel logo" />
         <div className="logo-text">Whisper of Pixel</div>
       </header>
 
@@ -375,12 +383,17 @@ function App() {
                   </div>
                 ) : (
                   <span className="drop-placeholder">
-                    Drop or uploads your files here ^^
+                    Click here to Uploads file ^^
                   </span>
                 )}
               </div>
               <div className="vertical-divider" />
               <div className="drop-right">
+              {isProcessing && (
+                  <div className="loading-overlay">
+                    <div className="spinner" />
+                  </div>
+                )}
                 {currentOutput ? (
                   <div className="output-wrapper">
                     <div className="output-label">
@@ -429,7 +442,7 @@ function App() {
                   </div>
                 ) : (
                   <span className="drop-placeholder">
-                    Output will appear here
+                    Output here
                   </span>
                 )}
               </div>

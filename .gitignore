@@ -1,0 +1,88 @@
+# =========================
+# GLOBAL / SYSTEM
+# =========================
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.temp
+*.swp
+
+# VS Code
+.vscode/
+.history/
+
+# =========================
+# PYTHON (Backend)
+# =========================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual env
+venv/
+env/
+.venv/
+*.env
+backend/.env
+backend/.env.*
+
+# Python cache
+*.pickle
+*.pkl
+
+# FastAPI static tmp
+backend/uploads/
+backend/tmp/
+backend/cache/
+
+# Model files (YOLO, PCA, v.v.)
+*.pt
+*.pth
+*.onnx
+*.engine
+*.npz
+
+# =========================
+# NODE / VITE (Frontend)
+# =========================
+
+whisper-of-heart/node_modules/
+whisper-of-heart/dist/
+whisper-of-heart/.env
+whisper-of-heart/.env.*
+!whisper-of-heart/.env.example
+
+# Vite local cache
+whisper-of-heart/.vite/
+whisper-of-heart/.parcel-cache/
+whisper-of-heart/.eslintcache
+
+# =========================
+# PROJECT-SPECIFIC
+# =========================
+
+# Do not commit local images uploaded during testing
+backend/images/
+backend/image_store/
+backend/temp/
+*.png
+*.jpg
+*.jpeg
+*.tiff
+*.bmp
+
+# Ignore Python/RAM dumps
+*.out
+*.dump
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# =========================
+# GIT
+# =========================
+*.orig
