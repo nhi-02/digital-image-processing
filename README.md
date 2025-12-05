@@ -15,7 +15,10 @@ Professional small project for educational and demo purposes: a FastAPI backend 
   - Operation metadata used to render the sidebar: [`PARENTS`](whisper-of-pixel/src/constants/operations.ts).
 
 ---
+## Wep app UI
+<img width="1918" height="916" alt="image" src="https://github.com/user-attachments/assets/4e00c407-13ac-4131-9b16-69d28a02cdaf" />
 
+---
 ## Repo layout (important files)
 - Backend
   - [backend/main.py](backend/main.py) — API routes + helper logic (upload, color, point, histogram, noise, filters, segmentation, PCA, YOLOv8, compression)
